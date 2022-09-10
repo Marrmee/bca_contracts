@@ -2,6 +2,7 @@
 .idea
 node_modules
 .vscode
+ERC4973
 
 #Hardhat files
 cache
