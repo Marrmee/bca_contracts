@@ -48,10 +48,18 @@ contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
       return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
     }
 
+    /**
+    *@dev   sets the price for the membership based on the multiplier.
+    @param _multiplier is the number that we multipl times 0.5 ether 
+            so that the price can be set with half ethers and not whole.
+    */
     function setEthPriceForMembership(uint256 _multiplier) external onlyRole(DEFAULT_ADMIN_ROLE) {
         MEMBERSHIP_COST = (1 ether / 2) * _multiplier;
     }
 
+    /**
+    *@dev   refunds if more ether is send than necessary.
+    */
     function refundIfOver() internal {
         require(msg.value >= MEMBERSHIP_COST, "Need to send more ETH");
         if (msg.value > MEMBERSHIP_COST) {
@@ -67,6 +75,9 @@ contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
         require(success);
     }
 
+    /**
+    *@dev   allows members of the BCA to mint an Account-Bound Token.
+    */
     function memberMint() external payable onlyRole(MEMBER_ROLE) {
         refundIfOver();
         currentTokenId++;
@@ -75,6 +86,9 @@ contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
         emit mintCompleted(msg.sender, currentTokenId, _URI(currentTokenId)); 
     }
 
+    /**
+    *@dev   admin can give the member role to an address.
+    */
     function giveMemberRole(address memberAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(MEMBER_ROLE, memberAddress);
         emit memberAdded(memberAddress, MEMBER_ROLE);
