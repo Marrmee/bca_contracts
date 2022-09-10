@@ -3,6 +3,7 @@
 node_modules
 .vscode
 ERC4973
+.deps/npm/forge-std
 
 #Hardhat files
 cache
