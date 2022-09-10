@@ -37,7 +37,7 @@ describe("AccountBoundTokenBCA", () => {
     });
   })
 
-  describe("set the membership price", async () => {
+  describe("Set the membership price", async () => {
     beforeEach(setupProductNft)
 
     it("sets the price", async () => {
@@ -47,24 +47,14 @@ describe("AccountBoundTokenBCA", () => {
     });
   })
 
-  describe("grant membership, mint, remove membership", async () => {
+  describe("Grant membership, mint an ABT and remove member", async () => {
     beforeEach(setupProductNft)
   
-    it("grants the member role", async () => {
+    it("adds a member by granting the member role", async () => {
       const memberAddress = await addresses[3].getAddress();
       const addMember = await abt.connect(addresses[0]).giveMemberRole(memberAddress);
-      expect(addMember).to.emit(abt, "memberAdded").withArgs(
+      expect(addMember).to.emit(abt, "MemberAdded").withArgs(
         memberAddress, await abt.MEMBER_ROLE()
-      );
-    });
-
-    it("emits mint completed", async () => {
-      const memberAddress = await addresses[3].getAddress();
-      await abt.connect(addresses[0]).giveMemberRole(memberAddress);
-      const override = {value: ethers.utils.parseEther("8")}
-      const mintToken = await abt.connect(addresses[3]).memberMint(override);
-      expect(mintToken).to.emit(abt, "mintCompleted").withArgs(
-        memberAddress, await abt.currentTokenId(), await abt.tokenURI(await abt.currentTokenId())
       );
     });
 
@@ -78,19 +68,17 @@ describe("AccountBoundTokenBCA", () => {
       expect(tokenBalanceAfterMint).to.equal(tokenBalanceBeforeMint.add(1));
     });
 
-    it("removes a member", async () => {
-      const formerMemberAddress = await addresses[4].getAddress();
-      await abt.connect(addresses[0]).giveMemberRole(formerMemberAddress);
+    it("emits mint completed", async () => {
+      const memberAddress = await addresses[3].getAddress();
+      await abt.connect(addresses[0]).giveMemberRole(memberAddress);
       const override = {value: ethers.utils.parseEther("8")}
-      await abt.connect(addresses[4]).memberMint(override);
-      const removeMember = await abt.connect(addresses[0]).removeMember(formerMemberAddress);
-      const tokenBalanceAfterRemoval = await abt.tokenIdsByAddresses(formerMemberAddress);
-      expect(removeMember).to.emit(abt, "memberRemoved").withArgs(
-        formerMemberAddress, tokenBalanceAfterRemoval,
+      const mintToken = await abt.connect(addresses[3]).memberMint(override);
+      expect(mintToken).to.emit(abt, "MintCompleted").withArgs(
+        memberAddress, await abt.currentTokenId(), await abt.tokenURI(await abt.currentTokenId())
       );
     });
 
-    it("removes member/burns an ABT", async () => {
+    it("removes member and burns the associated ABT", async () => {
       const formerMemberAddress = await addresses[4].getAddress();
       await abt.connect(addresses[0]).giveMemberRole(formerMemberAddress);
       const override = {value: ethers.utils.parseEther("8")}
@@ -99,6 +87,18 @@ describe("AccountBoundTokenBCA", () => {
       await abt.connect(addresses[0]).removeMember(formerMemberAddress);
       const tokenBalanceAfterRemoval = await abt.tokenIdsByAddresses(formerMemberAddress);
       expect(tokenBalanceBeforeRemoval).to.equal(tokenBalanceAfterRemoval.add(1));
+    });
+
+    it("emits an events after removing a member", async () => {
+      const formerMemberAddress = await addresses[4].getAddress();
+      await abt.connect(addresses[0]).giveMemberRole(formerMemberAddress);
+      const override = {value: ethers.utils.parseEther("8")}
+      await abt.connect(addresses[4]).memberMint(override);
+      const removeMember = await abt.connect(addresses[0]).removeMember(formerMemberAddress);
+      const tokenBalanceAfterRemoval = await abt.tokenIdsByAddresses(formerMemberAddress);
+      expect(removeMember).to.emit(abt, "MemberRemoved").withArgs(
+        formerMemberAddress, tokenBalanceAfterRemoval,
+      );
     });
   });
 
@@ -125,7 +125,7 @@ describe("AccountBoundTokenBCA", () => {
     });
   });
 
-  describe("withdrawal of ether", async () => {
+  describe("Withdrawal of ether", async () => {
     beforeEach(setupProductNft)
 
     it("withdraws ether stored in contract", async() => {

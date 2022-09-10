@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /**
 @title  Account-based token for the Blue Chip Alliance
 @author Marco Huberts
-@dev    Implementation of an Account-Based Token using ERC4973.
+@dev    Implementation of an Account-Bound Token using ERC4973.
 */
 
 contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
@@ -24,23 +24,31 @@ contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
     mapping(address => uint256) public tokenIdsByAddresses;
     mapping(uint => string) public URIS;
     
-    event mintCompleted(address receiver, uint256 tokenId, string URI);
-    event memberAdded(address newMember, bytes32 role); 
-    event memberRemoved(address formerMember, uint256 burnedTokenId);   
+    event MintCompleted(address receiver, uint256 tokenId, string URI);
+    event MemberAdded(address newMember, bytes32 role); 
+    event MemberRemoved(address formerMember, uint256 removedTokenId);   
+
+    /**
+     * @notice Launches contract, sets bcaCore members as admins and sets base URI.
+     * @param _baseURI the base uri where the metadata of the ABT has been stored.
+     * @param _bcaCore A list of members of the BCA that will receive the admin role.
+     */
 
     constructor(
-        string memory baseURI_,
+        string memory _baseURI,
         address[] memory _bcaCore
-    ) ERC4973("BlueChipAlliance", "BCA", "")
-    {
-        baseURI = baseURI_;
-
+    ) ERC4973("BlueChipAlliance", "BCA", "") {
+        baseURI = _baseURI;
         for (uint256 i = 0; i < _bcaCore.length; i++) {
             _setupRole(DEFAULT_ADMIN_ROLE, _bcaCore[i]);
         }
         _setRoleAdmin(MEMBER_ROLE, DEFAULT_ADMIN_ROLE);
     }
     
+    /**
+    *@dev   constructs the URI based on the given token Id
+    @param tokenId is the id of the token
+    */
     function _URI(uint256 tokenId) public view returns (string memory) {
       if(bytes(URIS[tokenId]).length != 0) {
         return string(URIS[tokenId]);
@@ -83,7 +91,7 @@ contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
         currentTokenId++;
         tokenIdsByAddresses[msg.sender] = currentTokenId;
         _mint(address(this), msg.sender, currentTokenId, _URI(currentTokenId));
-        emit mintCompleted(msg.sender, currentTokenId, _URI(currentTokenId)); 
+        emit MintCompleted(msg.sender, currentTokenId, _URI(currentTokenId)); 
     }
 
     /**
@@ -91,19 +99,25 @@ contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
     */
     function giveMemberRole(address memberAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(MEMBER_ROLE, memberAddress);
-        emit memberAdded(memberAddress, MEMBER_ROLE);
+        emit MemberAdded(memberAddress, MEMBER_ROLE);
     }
 
+    /**
+    *@dev   removes a member by burning the token and deleting the entry in the mapping
+    *@param formerMemberAddress is the address of the member that needs to be removed
+    */
     function removeMember(address formerMemberAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         revokeRole(MEMBER_ROLE, formerMemberAddress);
         _burn(tokenIdsByAddresses[formerMemberAddress]);
         delete tokenIdsByAddresses[formerMemberAddress];
-        emit memberRemoved(formerMemberAddress, tokenIdsByAddresses[formerMemberAddress]);
+        emit MemberRemoved(formerMemberAddress, tokenIdsByAddresses[formerMemberAddress]);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC4973, AccessControl) returns (bool) {
-        return interfaceId == type(ERC4973).interfaceId || super.supportsInterface(interfaceId);
+        return interfaceId == type(IERC4973).interfaceId || super.supportsInterface(interfaceId);
     }
+
+    // give, take and unequip functions can only be called by the admins.
 
     function give(address to, string calldata uri, bytes calldata signature) override public virtual onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256) {
         give(to, uri, signature);
