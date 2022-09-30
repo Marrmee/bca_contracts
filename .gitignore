@@ -2,7 +2,7 @@
 .idea
 node_modules
 .vscode
-ERC4973
+./ERC4973
 .deps/npm/forge-std
 
 #Hardhat files
@@ -13,4 +13,3 @@ build
 contracts/@*
 .env
 contracts-exposed
-ERC4973

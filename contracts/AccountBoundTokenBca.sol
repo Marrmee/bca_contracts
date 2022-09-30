@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -50,9 +50,6 @@ contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
     @param tokenId is the id of the token
     */
     function _URI(uint256 tokenId) public view returns (string memory) {
-      if(bytes(URIS[tokenId]).length != 0) {
-        return string(URIS[tokenId]);
-      }
       return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
     }
 
@@ -119,15 +116,18 @@ contract AccountBoundTokenBca is ERC4973, ReentrancyGuard, AccessControl {
 
     // give, take and unequip functions can only be called by the admins.
 
-    function give(address to, string calldata uri, bytes calldata signature) override public virtual onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256) {
+    function give(address to, string calldata uri, bytes calldata signature) override public virtual returns (uint256) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "You are not an admin");
         give(to, uri, signature);
     }
 
-    function take(address to, string calldata uri, bytes calldata signature) override public virtual onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256) {
+    function take(address to, string calldata uri, bytes calldata signature) override public virtual returns (uint256) {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "You are not an admin");
         take(to, uri, signature);
     }
 
-    function unequip(uint256 tokenId) public virtual override onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unequip(uint256 tokenId) public virtual override {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "You are not an admin");
         unequip(tokenId);
     }
 

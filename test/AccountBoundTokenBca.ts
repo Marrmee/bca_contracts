@@ -89,7 +89,7 @@ describe("AccountBoundTokenBCA", () => {
       expect(tokenBalanceBeforeRemoval).to.equal(tokenBalanceAfterRemoval.add(1));
     });
 
-    it("emits an events after removing a member", async () => {
+    it("emits an event after removing a member", async () => {
       const formerMemberAddress = await addresses[4].getAddress();
       await abt.connect(addresses[0]).giveMemberRole(formerMemberAddress);
       const override = {value: ethers.utils.parseEther("8")}
